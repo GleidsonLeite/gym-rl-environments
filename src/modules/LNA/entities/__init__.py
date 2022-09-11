@@ -14,7 +14,7 @@ from src.modules.shared.errors import AppError
 
 class LNA(Env):
 
-    NUMBER_OF_VARIABLES = 19
+    NUMBER_OF_VARIABLES = len(LNAMinMaxParameters.keys())
 
     MAX_RL = 1
     MIN_RL = -1
@@ -42,16 +42,7 @@ class LNA(Env):
             parameters=LNAMinMaxParameters,
         )
 
-        self.__state = {
-            key: z_normalize(
-                a=self.MAX_RL,
-                b=self.MIN_RL,
-                x=random.random(),
-                x_max=1,
-                x_min=0,
-            )
-            for key, _ in LNAMinMaxParameters.items()
-        }
+        self.reset()
 
     def _next_observation(self):
 
@@ -113,11 +104,11 @@ class LNA(Env):
     def reset(self) -> List[float]:
         self.__state = {
             key: z_normalize(
-                a=0,
-                b=1,
+                a=self.MIN_RL,
+                b=self.MAX_RL,
                 x=random.random(),
-                x_max=self.MAX_RL,
-                x_min=self.MIN_RL,
+                x_max=1,
+                x_min=0,
             )
             for key, _ in LNAMinMaxParameters.items()
         }
