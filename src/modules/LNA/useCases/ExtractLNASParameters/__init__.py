@@ -28,7 +28,8 @@ class ExtractLNASParametersUseCase:
         while not success:
             try:
                 response = requests.post(
-                    f"{base_url}/", json=simulation_configuration | circuit_parameters
+                    f"{base_url}/extractSParameters",
+                    json=simulation_configuration | circuit_parameters,
                 )
                 data = response.json()
 

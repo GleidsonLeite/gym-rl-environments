@@ -7,6 +7,9 @@ import random
 from src.modules.LNA.configuration import LNAMinMaxParameters
 from src.modules.LNA.entities.Normalizer import LNANormalizer
 from src.modules.LNA.useCases.ExtractLNASParameters import ExtractLNASParametersUseCase
+from src.modules.LNA.useCases.ExtractPowerConsumption import (
+    ExtractPowerConsumptionUseCase,
+)
 from src.modules.LNA.utils.Normalization import clamp, z_normalize
 from src.modules.shared.entities.SParameters import SParameters
 from src.modules.shared.errors import AppError
@@ -80,6 +83,7 @@ class LNA(Env):
         was_an_error_generated = False
         s_parameters: SParameters = None
         done = False
+        power_consumption: float = None
         try:
             s_parameters = ExtractLNASParametersUseCase.execute(
                 circuit_parameters=self.__normalizer.inverse_transform(
@@ -90,10 +94,18 @@ class LNA(Env):
                 stop_frequency=2.46e9,
                 variation="lin",
             )
+            power_consumption = ExtractPowerConsumptionUseCase.execute(
+                circuit_parameters=self.__normalizer.inverse_transform(self.__state)
+            )
         except Exception:
             was_an_error_generated = True
-
-        reward = -100 if was_an_error_generated else s_parameters.S21[1]
+        reward = (
+            -100
+            if was_an_error_generated
+            else s_parameters.S21[1]
+            + 1 / (1 + np.abs(s_parameters.S11[1]))
+            + 1 / (1 + np.abs(power_consumption))
+        )
         done = was_an_error_generated
         if math.isinf(reward):
             raise AppError
@@ -106,7 +118,7 @@ class LNA(Env):
             key: z_normalize(
                 a=self.MIN_RL,
                 b=self.MAX_RL,
-                x=random.random(),
+                x=0.5,
                 x_max=1,
                 x_min=0,
             )
